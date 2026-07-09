@@ -9,7 +9,7 @@
     "alarm",
     "beeper"
   ],
-  "signalk-plugin-enabled-by-default": false,
+  "signalk-plugin-enabled-by-default": true,
   "signalk": {
     "displayName": "GPIO Beeper Alarm"
   },
