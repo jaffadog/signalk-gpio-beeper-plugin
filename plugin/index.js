@@ -14,7 +14,7 @@ module.exports = (app) => {
 
   const plugin = {
     id: pkg.name,
-    name: pkg.signalk.description,
+    name: pkg.signalk.displayName,
 
     start: (settings, restartPlugin) => {
       app.debug("Plugin started");
