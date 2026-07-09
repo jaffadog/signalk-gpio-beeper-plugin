@@ -1,0 +1,26 @@
+{
+  "name": "signalk-gpio-beeper-plugin",
+  "version": "1.0.0",
+  "description": "A Signal K plugin that activates a Raspberry Pi GPIO beeper when a Signal K alarm condition exists",
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-category-utility"
+  ],
+  "signalk-plugin-enabled-by-default": false,
+  "signalk": {
+    "displayName": "GPIO Beeper Alarm"
+  },
+  "license": "MIT",
+  "author": "Jeremy Waters <jaffadog@gmail.com>",
+  "main": "plugin/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "onoff": "^6.0.3"
+  },
+  "repository": {},
+  "bugs": {},
+  "homepage": "https://github.com/jaffadog/signalk-gpio-beeper-plugin"
+}

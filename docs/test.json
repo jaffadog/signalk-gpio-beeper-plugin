@@ -1,0 +1,26 @@
+[
+  {
+    "updates": [
+      {
+        "values": [
+          {
+            "path": "notifications.foo.bar.baz",
+            "value": {
+              "state": "warn",
+              "method": ["foo", "sound"],
+              "message": "this is nice",
+              "status": {
+                "silenced": false,
+                "acknowledged": false,
+                "canSilence": true,
+                "canAcknowledge": true,
+                "canClear": false
+              },
+              "id": "44430b79-a6b5-4b9d-be50-c81ab12e1f24"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
