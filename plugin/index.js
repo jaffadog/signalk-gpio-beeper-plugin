@@ -1,35 +1,20 @@
 module.exports = (app) => {
+  const pkg = require("../package.json");
   const Gpio = require("onoff").Gpio;
   let buzzer = null;
   let notificationTimer;
-
-  function walkNotifications(node, pathPrefix, map) {
-    if (!node || typeof node !== "object") return;
-
-    if (
-      node.value &&
-      typeof node.value.state === "string" &&
-      node.value.method?.includes("sound") &&
-      node.value.status?.silenced !== true
-    ) {
-      map.set(pathPrefix, node.value.state);
-    }
-
-    for (const key of Object.keys(node)) {
-      if (["meta", "timestamp", "$source", "value"].includes(key)) continue;
-      walkNotifications(node[key], `${pathPrefix}.${key}`, map);
-    }
-  }
+  let unsubscribes = [];
 
   function beep(duration = 150) {
+    app.debug("BEEP");
     if (!buzzer) return;
     buzzer.writeSync(1);
     setTimeout(() => buzzer.writeSync(0), duration);
   }
 
   const plugin = {
-    id: "gpio-beeper-plugin",
-    name: "GPIO Beeper",
+    id: pkg.name,
+    name: pkg.signalk.description,
 
     start: (settings, restartPlugin) => {
       app.debug("Plugin started");
@@ -37,32 +22,61 @@ module.exports = (app) => {
 
       if (Gpio.accessible) buzzer = new Gpio(17, "out");
 
+      const shadowState = new Map(); // path -> state
       const severity = { emergency: 3, alarm: 2, warn: 1 };
 
+      app.subscriptionmanager.subscribe(
+        {
+          context: "*",
+          subscribe: [
+            {
+              path: "notifications.*",
+              period: 1000,
+            },
+          ],
+        },
+        unsubscribes,
+        (err) => app.error(err),
+        (delta) => {
+          delta.updates.forEach((update) => {
+            update.values.forEach(({ path, value }) => {
+              const state = value && value.state;
+              if (
+                !state ||
+                state === "normal" ||
+                !value.method?.includes("sound") ||
+                value.status?.silenced === true
+              ) {
+                shadowState.delete(path);
+              } else {
+                shadowState.set(path, state);
+              }
+            });
+          });
+        },
+      );
+
       notificationTimer = setInterval(() => {
-        const tree = app.getSelfPath("notifications");
-        const active = new Map();
-        if (tree) walkNotifications(tree, "notifications", active);
-
+        app.debug(shadowState);
         let worst = null;
-
-        for (const state of active.values()) {
-          if (severity[state] === undefined) continue; // skip 'normal' and any unrecognized state
+        for (const state of shadowState.values()) {
+          if (severity[state] === undefined) continue;
           if (worst === null || severity[state] > severity[worst])
             worst = state;
         }
-
-        if (worst === "alarm" || worst === "emergency") {
-          app.debug("BEEP", worst);
+        app.debug({ worst });
+        if (worst === "alarm" || worst === "emergency")
           beep(settings.duration || 300);
-        } else if (worst === "warn") {
-          app.debug("BEEP", worst);
-          beep(settings.duration / 3 || 100);
-        }
-      }, settings.interval || 1000);
+        else if (worst === "warn") beep(settings.duration / 3 || 100);
+      }, settings.interval || 3000);
     },
 
     stop: () => {
+      app.debug("Plugin stopped");
+      if (unsubscribes) {
+        unsubscribes.forEach((f) => f());
+        unsubscribes = [];
+      }
       if (notificationTimer) {
         clearInterval(notificationTimer);
         notificationTimer = null;
