@@ -110,7 +110,7 @@ function section(title, type) {
   return `### ${title}\n\n${body}\n\n`;
 }
 
-let changelogEntry = `# v${version} - ${date}\n\n`;
+let changelogEntry = `## v${version} - ${date}\n\n`;
 changelogEntry += section("✨ Features", "feat");
 changelogEntry += section("🐛 Fixes", "fix");
 changelogEntry += section("♻️ Refactors", "refactor");
