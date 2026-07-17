@@ -40,6 +40,7 @@ module.exports = (app) => {
         (delta) => {
           delta.updates.forEach((update) => {
             update.values.forEach(({ path, value }) => {
+              app.debug(`${path} ${JSON.stringify(value, null, 2)}`);
               const state = value && value.state;
               if (
                 !state ||
