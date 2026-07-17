@@ -81,7 +81,7 @@ jobs:
     uses: SignalK/signalk-server/.github/workflows/plugin-ci.yml@master
     with:
       test-command: npm test
-      build-command: npm run build:plugin:node18
+      build-command: npm run build:plugin:node18 --if-present
       node-versions: '["22", "24"]'
       enable-armv7: true
       enable-signalk-integration: true
@@ -92,7 +92,7 @@ jobs:
     uses: SignalK/signalk-server/.github/workflows/plugin-ci.yml@master
     with:
       test-command: npm test
-      build-command: npm run build:plugin:node18
+      build-command: npm run build:plugin:node18 --if-present
       node-versions: '["20"]'
       enable-armv7: true
       enable-signalk-integration: true
@@ -103,7 +103,7 @@ jobs:
     uses: SignalK/signalk-server/.github/workflows/plugin-ci.yml@master
     with:
       test-command: npm test
-      build-command: npm run build:plugin:node18
+      build-command: npm run build:plugin:node18 --if-present
       node-versions: '["18"]'
       enable-armv7: true
       enable-signalk-integration: true
