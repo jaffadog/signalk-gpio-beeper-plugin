@@ -107,7 +107,7 @@ function section(title, type) {
 
   const body = matches.map((e) => `- ${e.description} (${e.hash})`).join("\n");
 
-  return `### ${title}\n${body}\n\n`;
+  return `### ${title}\n\n${body}\n\n`;
 }
 
 let changelogEntry = `# v${version} - ${date}\n\n`;
