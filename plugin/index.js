@@ -16,7 +16,7 @@ module.exports = (app) => {
     id: pkg.name,
     name: pkg.signalk.displayName,
 
-    start: (settings, restartPlugin) => {
+    start: (settings, _restartPlugin) => {
       app.debug("Plugin started");
       app.debug(settings);
 

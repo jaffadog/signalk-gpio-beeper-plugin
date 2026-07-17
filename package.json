@@ -18,7 +18,14 @@
   "main": "plugin/index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "format": "npx prettier . --write",
+    "format:check": "npx prettier . --check",
+    "lint": "eslint .",
+    "test": "node --test",
+    "checks": "npm run format:check && npm run lint && npm run test",
+    "preversion": "npm run checks",
+    "changelog": "node scripts/generate-changelog.mjs",
+    "version": "npm run changelog"
   },
   "dependencies": {
     "onoff": "^6.0.3"
@@ -30,5 +37,15 @@
   "bugs": {
     "url": "https://github.com/jaffadog/signalk-gpio-beeper-plugin/issues"
   },
-  "homepage": "https://github.com/jaffadog/signalk-gpio-beeper-plugin"
+  "homepage": "https://github.com/jaffadog/signalk-gpio-beeper-plugin",
+  "devDependencies": {
+    "@eslint/css": "^1.4.0",
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^2.0.1",
+    "@eslint/markdown": "^8.0.3",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5"
+  }
 }
