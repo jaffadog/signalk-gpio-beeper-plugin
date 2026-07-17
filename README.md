@@ -1,3 +1,5 @@
+[![npm version](https://img.shields.io/npm/v/signalk-gpio-beeper-plugin.svg)](https://www.npmjs.com/package/signalk-gpio-beeper-plugin)
+
 # Signal K GPIO Beeper Plugin
 
 A [Signal K](https://signalk.org/) plugin that activates a piezo beeper attached to the Raspberry Pi GPIO header when a Signal K notification alarm condition exists (e.g. anchor dragging, etc).
