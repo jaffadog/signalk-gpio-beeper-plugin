@@ -68,6 +68,7 @@ module.exports = (app) => {
                 shadowState.delete(path);
               } else {
                 shadowState.set(path, state);
+                app.status(`Last: ${state} ${path}`);
               }
             });
           });
