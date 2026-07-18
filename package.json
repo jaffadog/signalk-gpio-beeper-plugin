@@ -5,6 +5,7 @@
   "keywords": [
     "signalk-node-server-plugin",
     "signalk-category-utility",
+    "signalk-category-hardware",
     "signalk",
     "alarm",
     "beeper"
