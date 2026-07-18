@@ -1,6 +1,6 @@
 {
   "name": "signalk-gpio-beeper-plugin",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "A Signal K plugin that activates a Raspberry Pi GPIO beeper when a Signal K alarm condition exists",
   "keywords": [
     "signalk-node-server-plugin",
