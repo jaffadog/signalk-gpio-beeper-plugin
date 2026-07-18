@@ -27,9 +27,7 @@
     "changelog": "node scripts/generate-changelog.mjs",
     "version": "npm run changelog"
   },
-  "dependencies": {
-    "onoff": "^6.0.3"
-  },
+  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jaffadog/signalk-gpio-beeper-plugin.git"
