@@ -28,11 +28,11 @@ module.exports = (app) => {
           pin: settings.gpioPin ?? 17,
         });
         app.debug(`Using buzzer implementation: ${buzzerHandle.impl}`);
-        if (buzzerHandle.impl === "sysfs") {
-          app.setPluginStatus(
-            "Using sysfs GPIO fallback (gpioset not found). Consider installing libgpiod-tools.",
-          );
-        }
+        app.setPluginStatus(
+          buzzerHandle.impl === "sysfs"
+            ? "⚠️ Using sysfs GPIO fallback (gpioset not found). Consider installing libgpiod-tools."
+            : "✅ Using gpioset.",
+        );
       } catch (err) {
         buzzerHandle = null;
         app.error(`Failed to initialize GPIO buzzer: ${err.message}`);
