@@ -107,7 +107,7 @@ jobs:
     with:
       test-command: npm test
       build-command: npm run build --if-present
-      node-versions: '["10"]'
+      node-versions: '["16"]'
       enable-armv7: false
       enable-signalk-integration: true
       signalk-server-versions: '["2.0.0"]'
@@ -115,13 +115,15 @@ jobs:
   # ── Manual runs (workflow_dispatch with custom inputs) ────
   test-plugin-manual:
     if: ${{ github.event_name == 'workflow_dispatch' }}
-    uses: SignalK/signalk-server/.github/workflows/plugin-ci.yml@master
+    # uses: SignalK/signalk-server/.github/workflows/plugin-ci.yml@master
+    uses: jaffadog/signalk-server/.github/workflows/plugin-ci.yml@feat/separate-build-node-version
     with:
       test-command: ${{ inputs.test-command }}
       build-command: ${{ inputs.build-command }}
       format-check-command: ${{ inputs.format-check-command }}
       coverage-command: ${{ inputs.coverage-command }}
       node-versions: ${{ inputs.node-versions }}
+      build-node-version: ${{ inputs.build-node-version }}
       enable-armv7: ${{ inputs.enable-armv7 }}
       enable-signalk-integration: ${{ inputs.enable-signalk-integration }}
       signalk-server-versions: ${{ inputs.signalk-server-versions }}
