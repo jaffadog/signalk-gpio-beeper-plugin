@@ -12,6 +12,7 @@
   ],
   "signalk-plugin-enabled-by-default": true,
   "signalk": {
+    "appIcon": "beeper.png",
     "displayName": "GPIO Beeper Alarm"
   },
   "license": "MIT",
