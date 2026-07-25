@@ -1,3 +1,9 @@
+## v1.1.8 - 2026-07-25
+
+### ✨ Features
+
+- add app icon (84f7cf7)
+
 ## v1.1.7 - 2026-07-25
 
 ### ✨ Features
