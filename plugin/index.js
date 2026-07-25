@@ -68,7 +68,9 @@ module.exports = (app) => {
                 shadowState.delete(path);
               } else {
                 shadowState.set(path, state);
-                app.setPluginStatus(`Last: ${state} ${path}`);
+                app.setPluginStatus(
+                  `Last: ${state} ${path} ${value.message || ""}`,
+                );
               }
             });
           });
