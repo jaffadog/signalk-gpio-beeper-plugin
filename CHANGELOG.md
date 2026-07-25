@@ -1,3 +1,23 @@
+## v1.1.7 - 2026-07-25
+
+### ✨ Features
+
+- add alarm notification message to plugin status message that is displayed when an alarm is encountered (76b5fbb)
+
+### ♻️ Refactors
+
+- improve logging (bb71644)
+
+### 🧹 Chores
+
+- updaye keywords (a0ff594)
+
+### 🔧 CI
+
+- test new plugin-ci (8340372)
+- test node16 (2e8a0a6)
+- test new plugin-ci (5fea52b)
+
 ## v1.1.6 - 2026-07-18
 
 ### 🐛 Fixes
