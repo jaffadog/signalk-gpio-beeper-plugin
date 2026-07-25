@@ -1,3 +1,9 @@
+## v1.1.9 - 2026-07-25
+
+### 🐛 Fixes
+
+- fix icon image (6f66cfd)
+
 ## v1.1.8 - 2026-07-25
 
 ### ✨ Features
