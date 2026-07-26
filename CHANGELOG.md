@@ -1,3 +1,9 @@
+## v1.2.1 - 2026-07-26
+
+### 🐛 Fixes
+
+- fix buzzer timing logic (b02cdb6)
+
 ## v1.2.0 - 2026-07-26
 
 ### 🐛 Fixes
