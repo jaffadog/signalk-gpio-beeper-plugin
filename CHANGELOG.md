@@ -1,3 +1,13 @@
+## v1.2.0 - 2026-07-26
+
+### 🐛 Fixes
+
+- add support for gpioset v2 (c2ff1a5)
+
+### 🧹 Chores
+
+- remove old icon image (5e2a6dc)
+
 ## v1.1.9 - 2026-07-25
 
 ### 🐛 Fixes
