@@ -10,9 +10,25 @@ module.exports = (app) => {
   function beep(duration = 150) {
     app.debug("BEEP");
     if (!buzzerHandle) return;
-    buzzerHandle.buzzer.on();
-    setTimeout(() => buzzerHandle.buzzer.off(), duration);
+    buzzerHandle.buzzer.beep(duration);
   }
+
+  // Safety net: release the GPIO line directly on SIGINT/SIGTERM, in case
+  // SignalK's own shutdown sequence doesn't reliably call plugin.stop()
+  // (e.g. when run via `npm start`, which has known issues forwarding
+  // Ctrl+C's SIGINT cleanly to the underlying node process). Mainly
+  // matters for the sysfs fallback, which holds an exported pin open
+  // between calls - the gpioset path no longer retains anything to
+  // release (see buzzer.js), since each beep is a self-contained,
+  // self-terminating process.
+  function forceBuzzerOff() {
+    if (buzzerHandle) {
+      app.debug("Forcing buzzer off on process signal");
+      buzzerHandle.buzzer.cleanup();
+    }
+  }
+  process.once("SIGINT", forceBuzzerOff);
+  process.once("SIGTERM", forceBuzzerOff);
 
   const plugin = {
     id: pkg.name,
@@ -133,9 +149,13 @@ module.exports = (app) => {
         );
 
         app.debug(`Manual test beep for ${seconds}s`);
-        buzzerHandle.buzzer.on();
+        // beep() itself handles turning back off after `seconds * 1000`ms
+        // (each implementation manages its own timing/self-termination -
+        // see buzzer.js). testTimer here only tracks the coordination
+        // window: preventing overlapping test triggers and suppressing
+        // alarm beeps for the duration of the test.
+        buzzerHandle.buzzer.beep(seconds * 1000);
         testTimer = setTimeout(() => {
-          buzzerHandle.buzzer.off();
           testTimer = null;
         }, seconds * 1000);
 

@@ -47,71 +47,62 @@ function isGpiosetAvailable() {
  * addon compilation is involved, so it's compatible with App Store
  * installs that run `npm install --ignore-scripts`.
  *
- * Holds the line at the requested value until explicitly turned off via
- * `off()`, using whichever argument syntax matches the installed gpioset
- * version (see getGpiosetVersion above) - "on" spawns a background
- * process, "off" kills it.
+ * v2's `-t <ms>,0` sets the line, holds for <ms>, then explicitly toggles
+ * it back to 0 before exiting - the line is never released while still
+ * driven high. Combined with `-z`/`--daemonize`, the process detaches
+ * into its own session, outside the calling process's (SignalK/Node's)
+ * process group - so it's immune to SIGINT sent to that group (e.g. a
+ * Ctrl+C in the terminal SignalK is running in), and completes its own
+ * toggle-to-zero regardless of what happens to the parent process
+ * afterward. This was confirmed by testing: killing an un-daemonized
+ * `gpioset -t` process mid-toggle left the line floating high; letting
+ * the same sequence run to completion (undisturbed) released it cleanly.
  *
- * Each spawned process also carries a generous self-release backstop
- * (BACKSTOP_MS, far longer than any real beep) baked into the gpioset
- * invocation itself. Sending SIGTERM (via off()) still releases the line
- * immediately as normal - the backstop only matters if the plugin process
- * crashes or otherwise never calls off(), in which case gpioset releases
- * the line on its own after the backstop elapses instead of leaving the
- * buzzer stuck on indefinitely.
+ * v1 has no built-in toggle-back-to-zero step - `-m time` just holds the
+ * value and exits, and whether that leaves the line in a defined low
+ * state on exit is unverified (untestable without v1-era hardware; the
+ * Buster device this was developed against has since been reimaged to
+ * Trixie). v1's `-b`/`--background` flag is used for the same signal-
+ * isolation benefit, but a physical pull-down resistor is recommended as
+ * defense-in-depth for anyone actually running the v1 fallback.
  */
-const BACKSTOP_MS = 10000;
-
 class GpiosetBuzzer {
   constructor({ chip = "gpiochip0", pin = 17 } = {}) {
     this.chip = chip;
     this.pin = pin;
-    this.child = null;
     this.version = getGpiosetVersion();
     if (this.version === null) {
       throw new Error("gpioset not found");
     }
   }
 
-  _buildArgs(value) {
-    // v1: chip is positional; -m time -s/-u holds the line for a fixed
-    // duration, but (like every mode) still releases immediately if the
-    // process receives SIGTERM/SIGINT before that duration elapses - so
-    // it doubles as both the hold mechanism and the crash backstop.
-    // v2: chip moved to a -c/--chip flag; -t <ms>,0 sets the value, holds
-    // for <ms>, then exits - same dual-purpose behavior on early SIGTERM.
-    if (this.version === 1) {
-      return [
-        "-m",
-        "time",
-        "-u",
-        String(BACKSTOP_MS * 1000),
-        this.chip,
-        `${this.pin}=${value}`,
-      ];
-    }
-    return ["-c", this.chip, "-t", `${BACKSTOP_MS},0`, `${this.pin}=${value}`];
-  }
+  beep(durationMs) {
+    const args =
+      this.version === 1
+        ? [
+            "-b",
+            "-m",
+            "time",
+            "-u",
+            String(durationMs * 1000),
+            this.chip,
+            `${this.pin}=1`,
+          ]
+        : ["-z", "-c", this.chip, "-t", `${durationMs},0`, `${this.pin}=1`];
 
-  on() {
-    if (this.child) return; // already on
-    this.child = spawn("gpioset", this._buildArgs(1), { stdio: "ignore" });
-    this.child.on("error", () => {
-      this.child = null;
+    // detached: true + unref() so Node never waits on or tracks this
+    // process - it's expected to outlive this function call and clean
+    // up after itself via its own internal timer.
+    const child = spawn("gpioset", args, {
+      stdio: "ignore",
+      detached: true,
     });
-    this.child.on("exit", () => {
-      this.child = null;
-    });
-  }
-
-  off() {
-    if (!this.child) return;
-    this.child.kill("SIGTERM");
-    this.child = null;
+    child.unref();
   }
 
   cleanup() {
-    this.off();
+    // Nothing to release - beep() never retains an open line or a
+    // tracked child process between calls.
   }
 }
 
@@ -176,20 +167,22 @@ class SysfsBuzzer {
     this.exported = true;
   }
 
-  on() {
+  beep(durationMs) {
     this._ensureExported();
     fs.writeFileSync(`${GPIO_ROOT}/gpio${this.sysfsPin}/value`, "1");
-  }
-
-  off() {
-    if (!this.exported) return;
-    fs.writeFileSync(`${GPIO_ROOT}/gpio${this.sysfsPin}/value`, "0");
+    setTimeout(() => {
+      try {
+        fs.writeFileSync(`${GPIO_ROOT}/gpio${this.sysfsPin}/value`, "0");
+      } catch {
+        // best-effort - pin may already be unexported (e.g. plugin stopped)
+      }
+    }, durationMs);
   }
 
   cleanup() {
     if (!this.exported) return;
     try {
-      this.off();
+      fs.writeFileSync(`${GPIO_ROOT}/gpio${this.sysfsPin}/value`, "0");
       fs.writeFileSync(`${GPIO_ROOT}/unexport`, String(this.sysfsPin));
     } catch {
       // best-effort cleanup
