@@ -8,13 +8,36 @@ const GPIO_ROOT = "/sys/class/gpio";
 // rp1 (Pi 5) is intentionally excluded - sysfs GPIO does not work there.
 const BCM_CHIP_LABEL_PATTERNS = [/^pinctrl-bcm2835$/, /^pinctrl-bcm2711$/];
 
-function isGpiosetAvailable() {
+/**
+ * Returns the gpioset major version (1 or 2), or null if gpioset isn't
+ * installed. The CLI changed significantly between versions:
+ *
+ * - v1 (Bullseye/Bookworm-era libgpiod-tools): default behavior is
+ *   "set values and exit immediately" - you must pass `-m signal` (or
+ *   `-m wait`/`-m time`) to keep the line held after the values are set.
+ * - v2 (Trixie-era libgpiod, e.g. v2.2.x): the `-m`/`--mode` flag is gone.
+ *   The new default is the opposite of v1's: gpioset now holds the line
+ *   until killed (SIGINT/SIGTERM) unless told otherwise, so no extra
+ *   flag is needed to get "hold until killed" behavior.
+ *
+ * Because of this, the same buzzer semantics require different argument
+ * lists depending on which major version is installed.
+ */
+function getGpiosetVersion() {
+  let output;
   try {
-    execFileSync("gpioset", ["--version"], { stdio: "ignore" });
-    return true;
+    output = execFileSync("gpioset", ["--version"], {
+      encoding: "utf8",
+    });
   } catch {
-    return false;
+    return null;
   }
+  const match = output.match(/v(\d+)\./);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function isGpiosetAvailable() {
+  return getGpiosetVersion() !== null;
 }
 
 /**
@@ -24,26 +47,59 @@ function isGpiosetAvailable() {
  * addon compilation is involved, so it's compatible with App Store
  * installs that run `npm install --ignore-scripts`.
  *
- * `gpioset -m signal` holds the line at the requested value until the
- * process receives SIGTERM/SIGINT, so "on" spawns a background process
- * and "off" kills it - this is the closest match to onoff's writeSync(1/0)
- * semantics that a subprocess-based tool can offer.
+ * Holds the line at the requested value until explicitly turned off via
+ * `off()`, using whichever argument syntax matches the installed gpioset
+ * version (see getGpiosetVersion above) - "on" spawns a background
+ * process, "off" kills it.
+ *
+ * Each spawned process also carries a generous self-release backstop
+ * (BACKSTOP_MS, far longer than any real beep) baked into the gpioset
+ * invocation itself. Sending SIGTERM (via off()) still releases the line
+ * immediately as normal - the backstop only matters if the plugin process
+ * crashes or otherwise never calls off(), in which case gpioset releases
+ * the line on its own after the backstop elapses instead of leaving the
+ * buzzer stuck on indefinitely.
  */
+const BACKSTOP_MS = 10000;
+
 class GpiosetBuzzer {
   constructor({ chip = "gpiochip0", pin = 17 } = {}) {
     this.chip = chip;
     this.pin = pin;
     this.child = null;
+    this.version = getGpiosetVersion();
+    if (this.version === null) {
+      throw new Error("gpioset not found");
+    }
+  }
+
+  _buildArgs(value) {
+    // v1: chip is positional; -m time -s/-u holds the line for a fixed
+    // duration, but (like every mode) still releases immediately if the
+    // process receives SIGTERM/SIGINT before that duration elapses - so
+    // it doubles as both the hold mechanism and the crash backstop.
+    // v2: chip moved to a -c/--chip flag; -t <ms>,0 sets the value, holds
+    // for <ms>, then exits - same dual-purpose behavior on early SIGTERM.
+    if (this.version === 1) {
+      return [
+        "-m",
+        "time",
+        "-u",
+        String(BACKSTOP_MS * 1000),
+        this.chip,
+        `${this.pin}=${value}`,
+      ];
+    }
+    return ["-c", this.chip, "-t", `${BACKSTOP_MS},0`, `${this.pin}=${value}`];
   }
 
   on() {
     if (this.child) return; // already on
-    this.child = spawn(
-      "gpioset",
-      ["-m", "signal", this.chip, `${this.pin}=1`],
-      { stdio: "ignore" },
-    );
+    this.child = spawn("gpioset", this._buildArgs(1), { stdio: "ignore" });
     this.child.on("error", () => {
+      this.child = null;
+    });
+    this.child.on("exit", () => {
       this.child = null;
     });
   }
