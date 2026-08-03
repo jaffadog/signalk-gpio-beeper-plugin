@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.2] - 2026-08-03
+
+### 📝 Docs
+
+- update comments (3d8aff3)
+
+### 🔧 CI
+
+- fix changelog format (a327271)
+
 ## v1.2.1 - 2026-07-26
 
 ### 🐛 Fixes
