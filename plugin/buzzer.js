@@ -22,6 +22,13 @@ const BCM_CHIP_LABEL_PATTERNS = [/^pinctrl-bcm2835$/, /^pinctrl-bcm2711$/];
  *
  * Because of this, the same buzzer semantics require different argument
  * lists depending on which major version is installed.
+ *
+ * OS Version to gpioset version:
+ * Buster (10)	  EOL, archived	  v1.2
+ * Bullseye (11)	oldoldstable	  1.6.2-1
+ * Bookworm (12)	oldstable	      1.6.3-1
+ * Trixie (13)	  current stable	2.2.1-2
+ * Forky (test)	  testing	        2.2.3-1
  */
 function getGpiosetVersion() {
   let output;
@@ -65,6 +72,10 @@ function isGpiosetAvailable() {
  * Trixie). v1's `-b`/`--background` flag is used for the same signal-
  * isolation benefit, but a physical pull-down resistor is recommended as
  * defense-in-depth for anyone actually running the v1 fallback.
+ *
+ * Sample/test commands for 0.1 sec beep:
+ * gpioset v1: gpioset -b -m time -u 100000 gpiochip0 17=1
+ * gpioset v2: gpioset -z -c gpiochip0 -t 100,0 17=1
  */
 class GpiosetBuzzer {
   constructor({ chip = "gpiochip0", pin = 17 } = {}) {
