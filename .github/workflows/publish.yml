@@ -50,7 +50,7 @@ jobs:
       - name: Extract changelog section for this release
         id: changelog
         run: |
-          awk '/^# /{if (p) exit; p=1} p' CHANGELOG.md | tail -n +1 > /tmp/release-body.md
+          awk '/^## /{if (p) exit; p=1} p' CHANGELOG.md | tail -n +1 > /tmp/release-body.md
           echo "body<<EOF" >> "$GITHUB_OUTPUT"
           cat /tmp/release-body.md >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -74,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"

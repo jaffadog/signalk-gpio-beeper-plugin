@@ -110,7 +110,7 @@ function section(title, type) {
   return `### ${title}\n\n${body}\n\n`;
 }
 
-let changelogEntry = `## v${version} - ${date}\n\n`;
+let changelogEntry = `## [${version}] - ${date}\n\n`;
 changelogEntry += section("✨ Features", "feat");
 changelogEntry += section("🐛 Fixes", "fix");
 changelogEntry += section("♻️ Refactors", "refactor");
@@ -130,6 +130,13 @@ const existing = existsSync(changelogPath)
   ? readFileSync(changelogPath, "utf-8")
   : "";
 
-writeFileSync(changelogPath, changelogEntry + existing);
+const TITLE = "# Changelog";
+const hasTitle = existing.trim().startsWith(TITLE);
+
+const body = hasTitle
+  ? existing.slice(existing.indexOf(TITLE) + TITLE.length).replace(/^\s+/, "")
+  : existing;
+
+writeFileSync(changelogPath, `${TITLE}\n\n${changelogEntry}${body}`);
 
 run("git add CHANGELOG.md");
