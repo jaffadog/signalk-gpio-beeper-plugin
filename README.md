@@ -52,6 +52,27 @@ The BCM GPIO pin number the buzzer is connected to (default is 17).
 
 The `gpiochip` device name to use, e.g. `gpiochip0` (default). Only used when `gpioset` is available; ignored when falling back to sysfs.
 
+### Rules
+
+Rules choose which notifications sound the beeper, for a boat where many notifications are worth seeing but not worth being woken by. Each rule has a notification path, optionally a source and a text the message must contain, and an action, `sound` or `silent`. The first rule a notification matches decides. A notification that matches no rule sounds as before, and a silenced or visual-only one never sounds, whatever the rules say.
+
+In a path, `*` matches within one part and `**` any number of parts, none included, and the leading `notifications.` may be left out. In a source, `*` matches any characters.
+
+To silence everything one device reports, and every battery notification:
+
+| Path            | Source       | Action |
+| --------------- | ------------ | ------ |
+| `**`            | `maretron.*` | silent |
+| `electrical.**` |              | silent |
+
+To sound only the anchor alarm and man overboard:
+
+| Path                | Action |
+| ------------------- | ------ |
+| `navigation.anchor` | sound  |
+| `mob`               | sound  |
+| `**`                | silent |
+
 ## Testing your wiring
 
 You can trigger a manual test beep without needing to raise a real alarm, by visiting (or curling) this URL while the plugin is running:

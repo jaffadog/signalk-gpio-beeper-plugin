@@ -1,4 +1,5 @@
 const { createBuzzer } = require("./buzzer");
+const { compileRules, ruleAction } = require("./rules");
 
 module.exports = (app) => {
   const pkg = require("../package.json");
@@ -55,7 +56,13 @@ module.exports = (app) => {
         app.setPluginError(`GPIO unavailable: ${err.message}`);
       }
 
-      const shadowState = new Map(); // path -> state
+      const rules = compileRules(settings.rules);
+      const dropped = (settings.rules?.length ?? 0) - rules.length;
+      if (dropped > 0) {
+        app.error(`Ignoring ${dropped} rule(s) without a path or action`);
+      }
+      // context and path -> { state, source }
+      const shadowState = new Map();
       const severity = { emergency: 3, alarm: 2, warn: 1 };
 
       app.subscriptionmanager.subscribe(
@@ -72,8 +79,10 @@ module.exports = (app) => {
         (err) => app.error(err),
         (delta) => {
           delta.updates.forEach((update) => {
+            const source = update.$source;
             update.values.forEach(({ path, value }) => {
               app.debug(`${path} ${JSON.stringify(value, null, 2)}`);
+              const key = `${delta.context} ${path}`;
               const state = value && value.state;
               if (
                 !state ||
@@ -81,9 +90,15 @@ module.exports = (app) => {
                 !value.method?.includes("sound") ||
                 value.status?.silenced === true
               ) {
-                shadowState.delete(path);
+                shadowState.delete(key);
+              } else if (ruleAction(rules, path, value, source) === "silent") {
+                // A rule on the source must not clear what another source
+                // raised on the same path.
+                if (shadowState.get(key)?.source === source) {
+                  shadowState.delete(key);
+                }
               } else {
-                shadowState.set(path, state);
+                shadowState.set(key, { state, source });
                 app.setPluginStatus(
                   `Last: ${state} ${path} ${value.message || ""}`,
                 );
@@ -97,7 +112,7 @@ module.exports = (app) => {
         if (testTimer) return; // don't beep for alarms while a manual test is running
         app.debug(shadowState);
         let worst = null;
-        for (const state of shadowState.values()) {
+        for (const { state } of shadowState.values()) {
           if (severity[state] === undefined) continue;
           if (worst === null || severity[state] > severity[worst])
             worst = state;
@@ -191,6 +206,43 @@ module.exports = (app) => {
             title: "gpiochip device name (only used when gpioset is available)",
             description: "(default gpiochip0)",
             default: "gpiochip0",
+          },
+          rules: {
+            type: "array",
+            title: "Rules",
+            description:
+              "Which notifications sound the beeper. The first rule a notification matches decides; one that matches no rule sounds as long as it asks for sound and is not silenced. To sound only a few, add those first and end with a silent rule for the path **.",
+            default: [],
+            items: {
+              type: "object",
+              required: ["path", "action"],
+              properties: {
+                path: {
+                  type: "string",
+                  title: "Notification path",
+                  description:
+                    "Without the leading notifications., e.g. navigation.anchor. * matches within one part of the path, ** any number of parts.",
+                },
+                source: {
+                  type: "string",
+                  title: "Source (optional)",
+                  description:
+                    "The $source the notification must come from, e.g. maretron.*; * matches any characters.",
+                },
+                message: {
+                  type: "string",
+                  title: "Message contains (optional)",
+                  description:
+                    "Case-insensitive text the message must contain.",
+                },
+                action: {
+                  type: "string",
+                  title: "Action",
+                  enum: ["sound", "silent"],
+                  default: "silent",
+                },
+              },
+            },
           },
         },
       };
