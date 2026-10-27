@@ -13,7 +13,11 @@
   "signalk-plugin-enabled-by-default": true,
   "signalk": {
     "appIcon": "pi-beeper-120x120.png",
-    "displayName": "GPIO Beeper Alarm"
+    "displayName": "GPIO Beeper Alarm",
+    "screenshots": [
+      "./docs/screenshots/config.png",
+      "./docs/screenshots/circuit-12v-buzzer.png"
+    ]
   },
   "license": "MIT",
   "author": "Jeremy Waters <jaffadog@gmail.com>",
