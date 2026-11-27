@@ -18,6 +18,28 @@ and it will ignore notifications that have:
 
 The plugin assumes you are using an "active" beeper (no PWM required) attached to GPIO 17 (BCM numbering) by default.
 
+![Plugin configuration](docs/screenshots/config.png)
+
+## Wiring
+
+The beeper must be an "active" one, with its own oscillator, so that it sounds on plain DC.
+
+A GPIO pin gives 3.3 V and only a few milliamps, and it must never see more than 3.3 V. A small 3.3 V piezo that draws very little current can sit directly between the pin and GND. Anything louder, such as a 12 V buzzer on the boat's supply, needs a transistor between the pin and the buzzer. This low-side MOSFET switch is one way to do that:
+
+![Example circuit: GPIO 17 switches a 12 V buzzer through an N-channel MOSFET](docs/images/buzzer-12v-mosfet.svg)
+
+| Part | Value                                      | Why                                                                                                        |
+| ---- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Q1   | logic-level N-channel MOSFET, e.g. AO3400  | Fully on at a 3.3 V gate. A MOSFET that needs 10 V on its gate (IRF540, IRFZ44N) barely conducts at 3.3 V. |
+| R1   | 220 Ω                                      | Limits the current that charges the gate.                                                                  |
+| R2   | 100 kΩ, gate to GND                        | Keeps the buzzer off while the Pi boots and the pin is not driven yet.                                     |
+| D1   | 1N4007 across the buzzer, cathode to +12 V | Takes the voltage spike when an electromagnetic buzzer switches off. Harmless with a piezo buzzer.         |
+| F1   | 1 A fuse                                   | Protects the wiring from the boat's 12 V supply.                                                           |
+
+Connect the Pi's GND to the 12 V negative, or the MOSFET has no reference for the gate voltage. No 12 V ever reaches the Pi.
+
+A relay module works as well, if it is opto-isolated and specified to switch on a 3.3 V input; many cheap modules need 5 V.
+
 ## Prerequisites
 
 This plugin controls GPIO without any native addon dependencies, so it works with Signal K App Store installs (which run `npm install --ignore-scripts`).
